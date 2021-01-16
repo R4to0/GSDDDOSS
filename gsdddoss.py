@@ -19,8 +19,14 @@ if not isLinux:
 			return False
 else:
 	def is_admin():
+		# This doesn't work when running from systemd service,
+		# even as a root, because the shell isn't invoked, so let's 
+		# ignore this part for now and check if INVOCATION_ID is set. -R4to0 (16 Jan 2021)
+		if os.getenv("INVOCATION_ID"):
+			return True
+
 		user = os.getenv("SUDO_USER")
-		if user is None:
+		if user is None or not os.geteuid() == 0: # also check if uid is 0 (root) -R4to0 (16 Jan 2021)
 			return False
 		else:
 			return True

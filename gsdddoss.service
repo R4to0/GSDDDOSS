@@ -1,0 +1,19 @@
+# Add this file to /etc/systemd/system/ as gsdddoss.service
+# then refresh service list: sudo systemctl daemon-reload
+# and enable service: sudo systemctl enable gsdddoss
+
+[Unit]
+Description=GoldSource Denied Distributed Denial of Service Script
+Wants=network.target network-online.target remote-fs.target
+After=network.target network-online.target remote-fs.target
+
+[Service]
+PermissionsStartOnly=false
+WorkingDirectory=/path/to/gsdddoss
+ExecStart=/usr/bin/python3 gsdddoss.py
+KillSignal=SIGINT
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
