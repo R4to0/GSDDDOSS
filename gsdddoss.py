@@ -73,7 +73,7 @@ def getall(ip):
 		
 def blockip(ip): #Make one rule per IP, used to group IPs in windows but it quickly hit the firewall rule limitation.
 	if isLinux:
-		subprocess.call("iptables -A INPUT -s {} -j DROP".format(ip), shell=True)
+		subprocess.call("iptables -w -I INPUT -s {} -j DROP".format(ip), shell=True)
 	else:
 		subprocess.call("netsh advfirewall firewall add rule name=\"Blocked IP\" dir=in interface=any action=block remoteip={}".format(ip), shell=True)
 		
@@ -81,7 +81,18 @@ def blockip(ip): #Make one rule per IP, used to group IPs in windows but it quic
 	print("Blocked ip: "+ip)
 	config_save(main_config, "ips")
 
+def import_rules(json):
+	print('Importing rules...')
+	for address in json['banned']:
+		if (subprocess.run("iptables-save | grep {}".format(address), shell=True, text=True, stdout=subprocess.PIPE).stdout):
+			print('Address {} already in iptables list.'.format(address))
+		else:
+			print('Banning {}.'.format(address))
+			subprocess.call("iptables -w -I INPUT -s {} -j DROP".format(address), shell=True)
+
 main_config = config_load("ips")
+import_rules(main_config)
+
 iplist = {}
 hotlist = {}
 
@@ -121,7 +132,7 @@ for data in udp_server():
 					
 				if(counted <= 1 and len(iplist[ret.ip]) > 12):
 					print("Popping: {} (most likely valid person spamming browser refresh)".format(ret.ip))
-					future = datetime.datetime.utcnow() + datetime.timedelta(seconds=240)
+					future = datetime.datetime.utcnow() + datetime.timedelta(seconds=300)
 					future = future.replace(tzinfo=datetime.timezone.utc).timestamp()
 					
 					if ret.ip in hotlist:
